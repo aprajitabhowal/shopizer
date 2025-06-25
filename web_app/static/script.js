@@ -1,0 +1,45 @@
+function triggerCodeQL() {
+  const repo = document.getElementById("repoUrl").value;
+  document.getElementById("status").innerText = "Triggering CodeQL...";
+  fetch("/trigger-codeql", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo_url: repo })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Failed to trigger");
+    return res.blob();
+  })
+  .then(blob => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "codeql-report.sarif";
+    a.click();
+    document.getElementById("status").innerText = "✅ CodeQL report downloaded.";
+  })
+  .catch(err => {
+    document.getElementById("status").innerText = "❌ CodeQL failed: " + err.message;
+  });
+}
+
+function triggerSonar() {
+  const repo = document.getElementById("repoUrl").value;
+  document.getElementById("status").innerText = "Triggering SonarQube...";
+  fetch("/trigger-sonar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo_url: repo })
+  })
+  .then(res => res.blob())
+  .then(blob => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "sonarqube-report.sarif";
+    a.click();
+    document.getElementById("status").innerText = "✅ SonarQube report downloaded.";
+  })
+  .catch(err => {
+    document.getElementById("status").innerText = "❌ SonarQube failed.";
+    console.error(err);
+  });
+}
