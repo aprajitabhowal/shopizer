@@ -4,9 +4,13 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-GITHUB_TOKEN = os.getenv("GITHUB_PAT")
-SONAR_TOKEN = os.getenv("SONAR_TOKEN")
 SONAR_PROJECT_KEY = "aprajita-bhowal_shopizer"
+
+def get_github_token():
+    return (request.json.get("github_token") if request.json else None) or os.getenv("GITHUB_PAT")
+
+def get_sonar_token():
+    return (request.json.get("sonar_token") if request.json else None) or os.getenv("SONAR_TOKEN")
 
 @app.route('/')
 def index():
@@ -21,7 +25,7 @@ def trigger_codeql():
 
     dispatch_url = f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow_file}/dispatches"
     headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Authorization": f"Bearer {get_github_token()}",
         "Accept": "application/vnd.github+json"
     }
     response = requests.post(dispatch_url, headers=headers, json={"ref": branch})
@@ -78,7 +82,7 @@ def trigger_codeql():
 @app.route('/trigger-sonar', methods=['POST'])
 def trigger_sonar():
     API_URL = f"https://sonarcloud.io/api/issues/search?componentKeys={SONAR_PROJECT_KEY}&types=VULNERABILITY"
-    auth = (SONAR_TOKEN, "")
+    auth = (get_sonar_token(), "")
     headers = {"Accept": "application/json"}
     sarif = {
         "version": "2.1.0",
@@ -144,7 +148,7 @@ def trigger_dependabot():
     owner, repo = "aprajita-bhowal", "shopizer"
 
     headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Authorization": f"Bearer {get_github_token()}",
         "Accept": "application/vnd.github+json"
     }
 
