@@ -66,7 +66,14 @@ def trigger_codeql():
         zip_ref.extractall(extract_dir)
         sarif_file = os.path.join(extract_dir, zip_ref.namelist()[0])
 
-    return send_file(sarif_file, as_attachment=True, download_name="codeql-report.sarif")
+    with open(sarif_file) as f:
+        report_json = json.load(f)
+
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+    with open(tmp_file.name, 'w') as f:
+        json.dump(report_json, f, indent=2)
+
+    return send_file(tmp_file.name, as_attachment=True, download_name="codeql-report.json", mimetype="application/json")
 
 @app.route('/trigger-sonar', methods=['POST'])
 def trigger_sonar():
@@ -124,11 +131,44 @@ def trigger_sonar():
 
     sarif["runs"][0]["tool"]["driver"]["rules"] = list(rules_map.values())
 
-    tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".sarif")
+    tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
     with open(tmp_path.name, 'w') as f:
         json.dump(sarif, f, indent=2)
 
-    return send_file(tmp_path.name, as_attachment=True, download_name="sonarqube-report.sarif")
+    return send_file(tmp_path.name, as_attachment=True, download_name="sonarqube-report.json", mimetype="application/json")
+
+
+@app.route('/trigger-dependabot', methods=['POST'])
+def trigger_dependabot():
+    repo_url = request.json.get("repo_url")
+    owner, repo = "aprajita-bhowal", "shopizer"
+
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    alerts = []
+    page = 1
+    while True:
+        resp = requests.get(
+            f"https://api.github.com/repos/{owner}/{repo}/dependabot/alerts",
+            headers=headers,
+            params={"per_page": 100, "page": page}
+        )
+        if resp.status_code != 200:
+            return jsonify({"error": "Failed to fetch dependabot alerts", "detail": resp.text}), 500
+        data = resp.json()
+        if not data:
+            break
+        alerts.extend(data)
+        page += 1
+
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+    with open(tmp_file.name, 'w') as f:
+        json.dump(alerts, f, indent=2)
+
+    return send_file(tmp_file.name, as_attachment=True, download_name="dependabot-report.json", mimetype="application/json")
 
 if __name__ == '__main__':
     app.run(debug=True)
