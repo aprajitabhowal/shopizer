@@ -1,10 +1,11 @@
 function triggerCodeQL() {
   const repo = document.getElementById("repoUrl").value;
+  const githubToken = document.getElementById("githubToken").value;
   document.getElementById("status").innerText = "Triggering CodeQL...";
   fetch("/trigger-codeql", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ repo_url: repo })
+    body: JSON.stringify({ repo_url: repo, github_token: githubToken })
   })
   .then(res => {
     if (!res.ok) throw new Error("Failed to trigger");
@@ -24,11 +25,12 @@ function triggerCodeQL() {
 
 function triggerSonar() {
   const repo = document.getElementById("repoUrl").value;
+  const sonarToken = document.getElementById("sonarToken").value;
   document.getElementById("status").innerText = "Triggering SonarQube...";
   fetch("/trigger-sonar", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ repo_url: repo })
+    body: JSON.stringify({ repo_url: repo, sonar_token: sonarToken })
   })
   .then(res => res.blob())
   .then(blob => {
@@ -46,11 +48,12 @@ function triggerSonar() {
 
 function triggerDependabot() {
   const repo = document.getElementById("repoUrl").value;
+  const githubToken = document.getElementById("githubToken").value;
   document.getElementById("status").innerText = "Triggering Dependabot...";
   fetch("/trigger-dependabot", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ repo_url: repo })
+    body: JSON.stringify({ repo_url: repo, github_token: githubToken })
   })
   .then(res => res.blob())
   .then(blob => {
