@@ -13,7 +13,7 @@ function triggerCodeQL() {
   .then(blob => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "codeql-report.sarif";
+    a.download = "codeql-report.json";
     a.click();
     document.getElementById("status").innerText = "✅ CodeQL report downloaded.";
   })
@@ -34,12 +34,34 @@ function triggerSonar() {
   .then(blob => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "sonarqube-report.sarif";
+    a.download = "sonarqube-report.json";
     a.click();
     document.getElementById("status").innerText = "✅ SonarQube report downloaded.";
   })
   .catch(err => {
     document.getElementById("status").innerText = "❌ SonarQube failed.";
+    console.error(err);
+  });
+}
+
+function triggerDependabot() {
+  const repo = document.getElementById("repoUrl").value;
+  document.getElementById("status").innerText = "Triggering Dependabot...";
+  fetch("/trigger-dependabot", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo_url: repo })
+  })
+  .then(res => res.blob())
+  .then(blob => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "dependabot-report.json";
+    a.click();
+    document.getElementById("status").innerText = "✅ Dependabot report downloaded.";
+  })
+  .catch(err => {
+    document.getElementById("status").innerText = "❌ Dependabot failed.";
     console.error(err);
   });
 }
