@@ -12,6 +12,9 @@ def get_github_token():
 def get_sonar_token():
     return (request.json.get("sonar_token") if request.json else None) or os.getenv("SONAR_TOKEN")
 
+def get_semgrep_token():
+    return (request.json.get("semgrep_token") if request.json else None) or os.getenv("SEMGREP_TOKEN")
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -140,6 +143,40 @@ def trigger_sonar():
         json.dump(sarif, f, indent=2)
 
     return send_file(tmp_path.name, as_attachment=True, download_name="sonarqube-report.json", mimetype="application/json")
+
+
+@app.route('/trigger-semgrep', methods=['POST'])
+def trigger_semgrep():
+    repo_url = request.json.get("repo_url")
+    headers = {
+        "Authorization": f"Bearer {get_semgrep_token()}",
+        "Accept": "application/json"
+    }
+
+    scans_resp = requests.get(
+        "https://semgrep.dev/api/v1/scans",
+        headers=headers,
+        params={"repo": repo_url, "limit": 1}
+    )
+    if scans_resp.status_code != 200:
+        return jsonify({"error": "Failed to fetch scans", "detail": scans_resp.text}), 500
+    scans = scans_resp.json().get("scans", [])
+    if not scans:
+        return jsonify({"error": "No scans found"}), 404
+    scan_id = scans[0]["id"]
+
+    findings_resp = requests.get(
+        f"https://semgrep.dev/api/v1/scans/{scan_id}/sarif",
+        headers=headers
+    )
+    if findings_resp.status_code != 200:
+        return jsonify({"error": "Failed to fetch findings", "detail": findings_resp.text}), 500
+
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+    with open(tmp_file.name, 'wb') as f:
+        f.write(findings_resp.content)
+
+    return send_file(tmp_file.name, as_attachment=True, download_name="semgrep-report.json", mimetype="application/json")
 
 
 @app.route('/trigger-dependabot', methods=['POST'])
