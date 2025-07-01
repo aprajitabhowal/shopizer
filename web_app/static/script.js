@@ -68,3 +68,26 @@ function triggerDependabot() {
     console.error(err);
   });
 }
+
+function triggerSemgrep() {
+  const repo = document.getElementById("repoUrl").value;
+  const semgrepToken = document.getElementById("semgrepToken").value;
+  document.getElementById("status").innerText = "Triggering Semgrep...";
+  fetch("/trigger-semgrep", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repo_url: repo, semgrep_token: semgrepToken })
+  })
+  .then(res => res.blob())
+  .then(blob => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "semgrep-report.json";
+    a.click();
+    document.getElementById("status").innerText = "✅ Semgrep report downloaded.";
+  })
+  .catch(err => {
+    document.getElementById("status").innerText = "❌ Semgrep failed.";
+    console.error(err);
+  });
+}

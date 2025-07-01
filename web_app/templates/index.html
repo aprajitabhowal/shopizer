@@ -10,10 +10,12 @@
   <br><br>
   <input type="password" id="githubToken" placeholder="GitHub PAT" size="30">
   <input type="password" id="sonarToken" placeholder="SonarCloud Token" size="30">
+  <input type="password" id="semgrepToken" placeholder="Semgrep Token" size="30">
   <br><br>
   <button onclick="triggerCodeQL()">Run CodeQL Scan</button>
   <button onclick="triggerSonar()">Run SonarQube Scan</button>
   <button onclick="triggerDependabot()">Run Dependabot Scan</button>
+  <button onclick="triggerSemgrep()">Run Semgrep Scan</button>
 
   <p id="status"></p>
   <script src="/static/script.js"></script>
