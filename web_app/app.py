@@ -153,22 +153,22 @@ def trigger_semgrep():
         "Accept": "application/json"
     }
 
-    scans_resp = requests.get(
-        "https://semgrep.dev/api/v1/scans",
-        headers=headers,
-        params={"repo": repo_url, "limit": 1}
-    )
+    org_slug = "aprajita_bhowal_cogniasec_com"
+    scans_url = f"https://semgrep.dev/api/v1/orgs/{org_slug}/scans"
+
+    scans_resp = requests.get(scans_url, headers=headers)
     if scans_resp.status_code != 200:
         return jsonify({"error": "Failed to fetch scans", "detail": scans_resp.text}), 500
-    scans = scans_resp.json().get("scans", [])
-    if not scans:
-        return jsonify({"error": "No scans found"}), 404
-    scan_id = scans[0]["id"]
 
-    findings_resp = requests.get(
-        f"https://semgrep.dev/api/v1/scans/{scan_id}/sarif",
-        headers=headers
-    )
+    scans = scans_resp.json().get("scans", [])
+    matching_scans = [s for s in scans if s.get("repo", {}).get("url") == repo_url]
+    if not matching_scans:
+        return jsonify({"error": "No scans found for this repo"}), 404
+
+    scan_id = matching_scans[0]["id"]
+    findings_url = f"https://semgrep.dev/api/v1/scans/{scan_id}/sarif"
+
+    findings_resp = requests.get(findings_url, headers=headers)
     if findings_resp.status_code != 200:
         return jsonify({"error": "Failed to fetch findings", "detail": findings_resp.text}), 500
 
